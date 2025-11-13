@@ -24,3 +24,13 @@ def add_student(request):
     )
     student.save()
     return HttpResponse("Student added successfully")
+
+@csrf_exempt
+@require_http_methods(["DELETE"])
+def delete_student(request, id):
+    student = Student.objects.get(id=id)
+    student.delete()
+    return HttpResponse("Student deleted successfully")
+
+
+
