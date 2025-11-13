@@ -4,5 +4,6 @@ from django.urls.conf import include
 from . import views
 
 urlpatterns = [
-    path('',views.index,name="index")
+    path('students/', views.get_students, name='get_students'),
+    path('students/add/', views.add_student, name='add_student'),
 ]
