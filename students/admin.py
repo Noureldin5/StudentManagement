@@ -1,17 +1,5 @@
 from django.contrib import admin
-from .models import Student, Teacher, Course, Enrollment, EnrollmentRequest
-
-@admin.register(Course)
-class CourseAdmin(admin.ModelAdmin):
-    list_display = ['code', 'name', 'credits', 'created_at']
-    search_fields = ['name', 'code']
-
-@admin.register(Teacher)
-class TeacherAdmin(admin.ModelAdmin):
-    list_display = ['first_name', 'last_name', 'subject', 'user']
-    search_fields = ['first_name', 'last_name', 'subject']
-    filter_horizontal = ['courses']
-
+from .models import Student, Enrollment, EnrollmentRequest
 @admin.register(Student)
 class StudentAdmin(admin.ModelAdmin):
     list_display = ['first_name', 'last_name', 'age', 'gpa', 'user']
