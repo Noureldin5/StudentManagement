@@ -85,18 +85,12 @@ def approve_request(request, request_id):
         if enrollment_request.status == 'approved':
             return JsonResponse({'error': 'Request already approved'}, status=400)
 
-        # Update request
-        enrollment_request.status = 'approved'
-        enrollment_request.reviewed_by = teacher
-        enrollment_request.reviewed_at = timezone.now()
-        enrollment_request.save()
-
-        # Create enrollment
-        enrollment, created = Enrollment.objects.get_or_create(
-            student=enrollment_request.student,
-            course=enrollment_request.course,
-            defaults={'enrolled_by': teacher}
-        )
+        # Check if course is full
+        if enrollment_request.course.is_full:
+            return JsonResponse({
+                'error': f'Cannot enroll - course is full ({enrollment_request.course.enrolled_students}/{enrollment_request.course.openings})'
+            }, status=400)
+        enrollment = enrollment_request.approve(teacher)
 
         return JsonResponse({
             'message': 'Enrollment request approved successfully',
@@ -159,6 +153,12 @@ def direct_enroll(request):
                 'error': 'You do not have permission to enroll students in this course'
             }, status=403)
 
+        # if course is full
+        if course.is_full:
+            return JsonResponse({
+                'error': f'Cannot enroll - course is full ({course.enrolled_students}/{course.openings})'
+            }, status=400)
+
         # Create enrollment
         enrollment, created = Enrollment.objects.get_or_create(
             student=student,
@@ -185,7 +185,6 @@ def direct_enroll(request):
 
 @require_http_methods(["GET"])
 def course_students(request, teacher_id, course_id):
-    """View all students enrolled in a specific course"""
     teacher = get_object_or_404(Teacher, id=teacher_id)
     course = get_object_or_404(Course, id=course_id)
 

@@ -26,7 +26,6 @@ class Course(models.Model):
 
     def process_waitlist(self):
         while not self.is_full:
-            # Get highest priority waitlisted request
             next_request = self.enrollment_requests.filter(
                 status='waitlisted'
             ).order_by('-priority', 'requested_at').first()
