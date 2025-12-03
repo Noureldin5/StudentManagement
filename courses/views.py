@@ -9,7 +9,7 @@ from students.models import Enrollment
 @require_http_methods(["GET"])
 def course_list(request):
     courses = Course.objects.all().values(
-        'id', 'name', 'code', 'description', 'credits', 'created_at'
+        'id', 'name', 'code', 'description', 'credits', 'created_at','openings'
     )
 
     courses_list = []
@@ -39,10 +39,16 @@ def course_detail(request, course_id):
         'credits': course.credits,
         'created_at': course.created_at,
         'enrolled_students': enrollment_count,
+        'openings' : course.openings,
         'teachers': list(teachers)
     }
 
     return JsonResponse(data)
+
+@require_http_methods(["GET"])
+def course_openings(request, course_id):
+    course = get_object_or_404(Course, id= course_id)
+    return JsonResponse({'openings': course.openings})
 
 
 @require_http_methods(["GET"])

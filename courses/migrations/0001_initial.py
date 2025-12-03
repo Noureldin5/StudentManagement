@@ -20,6 +20,7 @@ class Migration(migrations.Migration):
                 ('description', models.TextField(blank=True)),
                 ('credits', models.IntegerField(default=3)),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
+                ('openings', models.IntegerField(default=0)),
             ],
         ),
     ]

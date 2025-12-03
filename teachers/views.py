@@ -19,6 +19,7 @@ def teacher_list(request):
     return JsonResponse(list(teachers), safe=False)
 
 
+
 @require_http_methods(["GET"])
 def teacher_detail(request, teacher_id):
     teacher = get_object_or_404(Teacher, id=teacher_id)
@@ -44,7 +45,6 @@ def teacher_detail(request, teacher_id):
 
 @require_http_methods(["GET"])
 def pending_requests(request, teacher_id):
-    """View all pending enrollment requests for teacher's courses"""
     teacher = get_object_or_404(Teacher, id=teacher_id)
 
     requests = EnrollmentRequest.objects.filter(
