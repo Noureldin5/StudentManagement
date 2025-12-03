@@ -1,7 +1,7 @@
 from django.db import models
 from django.utils import timezone
-from students.models import Enrollment
 from django.core.exceptions import ValidationError
+from students.models import Enrollment
 class Course(models.Model):
     name = models.CharField(max_length=100)
     code = models.CharField(max_length=20, unique=True)

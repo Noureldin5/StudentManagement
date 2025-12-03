@@ -3,7 +3,6 @@ from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from teachers.models import Teacher
-from courses.models import Course
 
 
 class Student(models.Model):
@@ -12,7 +11,7 @@ class Student(models.Model):
     last_name = models.CharField(max_length=50)
     age = models.IntegerField()
     gpa = models.FloatField()
-    enrolled_courses = models.ManyToManyField(Course, through='Enrollment', related_name='enrolled_students')
+    enrolled_courses = models.ManyToManyField('courses.Course', through='Enrollment', related_name='enrolled_students')
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -21,7 +20,7 @@ class Student(models.Model):
 
 class Enrollment(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='enrollments')
-    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='enrollments')
+    course = models.ForeignKey('courses.Course', on_delete=models.CASCADE, related_name='enrollments')
     enrolled_by = models.ForeignKey(Teacher, on_delete=models.SET_NULL, null=True, blank=True,
                                     related_name='students_enrolled')
     enrollment_date = models.DateTimeField(auto_now_add=True)
@@ -55,7 +54,7 @@ class EnrollmentRequest(models.Model):
     ]
 
     student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='enrollment_requests')
-    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='enrollment_requests')
+    course = models.ForeignKey('courses.Course', on_delete=models.CASCADE, related_name='enrollment_requests')
     status = models.CharField(max_length=15, choices=STATUS_CHOICES, default='pending')
     requested_at = models.DateTimeField(auto_now_add=True)
     reviewed_by = models.ForeignKey(Teacher, on_delete=models.SET_NULL, null=True, blank=True,
