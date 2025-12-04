@@ -1,6 +1,7 @@
 
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from .models import Student, Enrollment, EnrollmentRequest
@@ -114,12 +115,16 @@ def request_enrollment(request):
         student = get_object_or_404(Student, id=data.get('student_id'))
         course = get_object_or_404(Course, id=data.get('course_id'))
 
+        if course.enrollment_deadline and timezone.now() > course.enrollment_deadline:
+            return JsonResponse({'error': 'Enrollment request deadline has passed'}, status=400)
+
         if Enrollment.objects.filter(student=student, course=course).exists():
             return JsonResponse({'error': 'Already enrolled in this course'}, status=400)
 
         enrollment_request, created = EnrollmentRequest.objects.get_or_create(
             student=student,
             course=course,
+            enrollment_deadline= course.enrollment_deadline,
             defaults={'notes': data.get('notes', '')}
         )
 
@@ -136,7 +141,8 @@ def request_enrollment(request):
         return JsonResponse({
             'message': 'Enrollment request submitted successfully',
             'request_id': enrollment_request.id,
-            'status': enrollment_request.status
+            'status': enrollment_request.status,
+            'deadline' : course.enrollment_deadline.isoformat() if course.enrollment_deadline else None
         }, status=201)
 
     except Exception as e:

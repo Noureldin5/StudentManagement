@@ -11,7 +11,7 @@ class Student(models.Model):
     last_name = models.CharField(max_length=50)
     age = models.IntegerField()
     gpa = models.FloatField()
-    enrolled_courses = models.ManyToManyField('courses.Course', through='Enrollment', related_name='enrolled_students')
+    enrolled_courses = models.ManyToManyField('courses.Course', through='Enrollment', related_name='students')
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -24,6 +24,7 @@ class Enrollment(models.Model):
     enrolled_by = models.ForeignKey(Teacher, on_delete=models.SET_NULL, null=True, blank=True,
                                     related_name='students_enrolled')
     enrollment_date = models.DateTimeField(auto_now_add=True)
+    enrollment_deadline = models.DateTimeField(blank=True, null=True)
     grade = models.CharField(max_length=2, blank=True, null=True)
 
     class Meta:
@@ -34,7 +35,11 @@ class Enrollment(models.Model):
         if self.course.is_full and not self.pk:  # Only check for new enrollments
             raise ValidationError(f'Course {self.course.code} is full ({self.course.openings} students)')
 
-        if Enrollment.objects.filter(student=self.student, course=self.course).exists():
+        # Check for duplicate enrollment, but exclude the current instance if updating
+        existing = Enrollment.objects.filter(student=self.student, course=self.course)
+        if self.pk:
+            existing = existing.exclude(pk=self.pk)
+        if existing.exists():
             raise ValidationError(f'Student is already enrolled in {self.course.code}')
 
     def save(self, *args, **kwargs):
@@ -60,6 +65,7 @@ class EnrollmentRequest(models.Model):
     reviewed_by = models.ForeignKey(Teacher, on_delete=models.SET_NULL, null=True, blank=True,
                                     related_name='reviewed_requests')
     reviewed_at = models.DateTimeField(null=True, blank=True)
+    enrollment_deadline = models.DateTimeField(blank=True, null=True, help_text = "Enrollment request deadline")
     notes = models.TextField(blank=True)
     priority = models.IntegerField(default=0, help_text="Higher number = higher priority")
 
@@ -68,8 +74,14 @@ class EnrollmentRequest(models.Model):
         ordering = ['-priority', '-requested_at']
 
     def clean(self):
-        if Enrollment.objects.filter(student=self.student, course=self.course).exists():
-            raise ValidationError(f'Student is already enrolled in {self.course.code}')
+        if self.enrollment_deadline and timezone.now() > self.enrollment_deadline:
+            raise ValidationError('Enrollment request deadline has passed')
+        
+        # Only check for existing enrollment if this request is pending or waitlisted
+        # Don't check if it's approved/rejected as the enrollment may have been created during approval
+        if self.status in ['pending', 'waitlisted']:
+            if Enrollment.objects.filter(student=self.student, course=self.course).exists():
+                raise ValidationError(f'Student is already enrolled in {self.course.code}')
 
         # Check if there's already a pending request
         existing_request = EnrollmentRequest.objects.filter(

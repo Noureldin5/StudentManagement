@@ -1,6 +1,4 @@
-"""
-Teacher app URL configuration
-"""
+
 from django.urls import path
 from . import views
 
@@ -14,6 +12,7 @@ urlpatterns = [
     
     # Enrollment request management
     path('<int:teacher_id>/requests/', views.pending_requests, name='pending_requests'),
+    path('<int:course_id>/deadline/', views.update_enrollment_deadline, name='update_deadline'),
     path('request/<int:request_id>/approve/', views.approve_request, name='approve_request'),
     path('request/<int:request_id>/reject/', views.reject_request, name='reject_request'),
     

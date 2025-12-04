@@ -1,5 +1,6 @@
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
+from django.utils.dateparse import parse_datetime
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.utils import timezone
@@ -11,7 +12,6 @@ import json
 
 @require_http_methods(["GET"])
 def teacher_list(request):
-    """Get all teachers"""
     teachers = Teacher.objects.all().values(
         'id', 'first_name', 'last_name', 'subject',
         'user__username', 'user__email', 'created_at'
@@ -69,7 +69,6 @@ def pending_requests(request, teacher_id):
 @csrf_exempt
 @require_http_methods(["POST"])
 def approve_request(request, request_id):
-    """Approve an enrollment request"""
     try:
         data = json.loads(request.body)
         teacher = get_object_or_404(Teacher, id=data.get('teacher_id'))
@@ -106,7 +105,6 @@ def approve_request(request, request_id):
 @csrf_exempt
 @require_http_methods(["POST"])
 def reject_request(request, request_id):
-    """Reject an enrollment request"""
     try:
         data = json.loads(request.body)
         teacher = get_object_or_404(Teacher, id=data.get('teacher_id'))
@@ -139,7 +137,6 @@ def reject_request(request, request_id):
 @csrf_exempt
 @require_http_methods(["POST"])
 def direct_enroll(request):
-    """Directly enroll a student in a course (bypass request system)"""
     try:
         data = json.loads(request.body)
 
@@ -220,8 +217,41 @@ def course_students(request, teacher_id, course_id):
 
 @csrf_exempt
 @require_http_methods(["PUT"])
+def update_enrollment_deadline(request, course_id):
+    try:
+        data = json.loads(request.body)
+        teacher = get_object_or_404(Teacher, id=data.get('teacher_id'))
+        course = get_object_or_404(Course, id=course_id)
+        if course not in teacher.courses.all():
+            return JsonResponse({
+                'error': 'You do not have permission to update enrollment deadline for this course'
+            }, status=403)
+        deadline_str = data.get('enrollment_deadline')
+        if deadline_str:
+            deadline = parse_datetime(deadline_str)
+            if not deadline:
+                return JsonResponse({'error': 'Invalid enrollment deadline'}, status=400)
+        else:
+            deadline = None
+        old_deadline = course.enrollment_deadline
+        course.enrollment_deadline = deadline
+        course.save()
+
+        EnrollmentRequest.objects.filter(
+            course=course, status='pending'
+        ).update(enrollment_deadline=deadline)
+
+        return JsonResponse(
+            {'message': 'Enrollment deadline updated successfully', 'course': course.name,
+             'old_deadline': old_deadline,
+             'new_deadline': deadline,
+             'updated_by': f"{teacher.first_name} {teacher.last_name}"}
+        )
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=400)
+@csrf_exempt
+@require_http_methods(["PUT"])
 def update_grade(request, enrollment_id):
-    """Update a student's grade for a course"""
     try:
         data = json.loads(request.body)
 
@@ -253,7 +283,6 @@ def update_grade(request, enrollment_id):
 
 @require_http_methods(["GET"])
 def my_courses(request, teacher_id):
-    """Get all courses assigned to a teacher"""
     teacher = get_object_or_404(Teacher, id=teacher_id)
 
     courses = teacher.courses.all().values(

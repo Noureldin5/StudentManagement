@@ -1,13 +1,15 @@
 from django.db import models
 from django.utils import timezone
 from django.core.exceptions import ValidationError
-from students.models import Enrollment
+
+
 class Course(models.Model):
     name = models.CharField(max_length=100)
     code = models.CharField(max_length=20, unique=True)
     description = models.TextField(blank=True)
     credits = models.IntegerField(default=3)
     openings = models.PositiveIntegerField(default=20)
+    enrollment_deadline = models.DateTimeField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     @property
@@ -21,10 +23,19 @@ class Course(models.Model):
     def is_full(self):
         return self.enrolled_students >= self.openings
 
+
+    @property
+    def is_enrollment_open(self):
+        if not self.enrollment_deadline:
+            return True
+        return timezone.now() <= self.enrollment_deadline
+
     def can_enroll(self):
         return not self.is_full
 
     def process_waitlist(self):
+        from students.models import Enrollment
+
         while not self.is_full:
             next_request = self.enrollment_requests.filter(
                 status='waitlisted'
