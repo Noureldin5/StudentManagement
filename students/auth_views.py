@@ -150,7 +150,7 @@ def user_login(request):
                 'user_type': user_type,
                 'user_id': user.id,
                 'profile_id': profile_id,
-                'username': user.username
+                'username': user.get_username()
             })
         else:
             return JsonResponse({'error': 'Invalid credentials'}, status=401)
