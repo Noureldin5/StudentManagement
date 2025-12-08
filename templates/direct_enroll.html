@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% block title %}Direct Enrollment - {{ course.name }}{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 600px; margin: 20px auto;">
+    <h2>📝 Direct Enrollment</h2>
+    <p><strong>Course:</strong> {{ course.code }} - {{ course.name }}</p>
+    <p><strong>Available Spots:</strong> {{ course.available_spots }}/{{ course.openings }}</p>
+
+    <form method="POST">
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="student_id">Select Student to Enroll *</label>
+            <select name="student_id" id="student_id" required>
+                <option value="">-- Choose a student --</option>
+                {% for student in available_students %}
+                    <option value="{{ student.id }}">
+                        {{ student.first_name }} {{ student.last_name }}
+                        (Age: {{ student.age }}, GPA: {{ student.gpa }})
+                    </option>
+                {% endfor %}
+            </select>
+            {% if not available_students %}
+                <small style="color: #718096;">All students are already enrolled in this course.</small>
+            {% endif %}
+        </div>
+
+        <div style="display: flex; gap: 10px;">
+            <button type="submit" class="btn btn-success" style="flex: 1;" {% if not available_students %}disabled{% endif %}>
+                Enroll Student
+            </button>
+            <a href="/teacher-course-students/{{ course.id }}/" class="btn" style="flex: 1; text-align: center;">
+                Cancel
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock %}
+

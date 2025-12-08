@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ course.name }} - Students{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>{{ course.code }} - {{ course.name }}</h2>
+    <p><strong>Total Students:</strong> {{ students.count }}/{{ course.openings }}</p>
+    <p><strong>Available Spots:</strong> {{ course.available_spots }}</p>
+    <div style="margin-top: 15px; display: flex; gap: 10px;">
+        <a href="/manage-course/{{ course.id }}/" class="btn btn-warning btn-small">Manage Course</a>
+        <a href="/teacher-dashboard/" class="btn btn-small">Back to Dashboard</a>
+    </div>
+</div>
+
+<div class="card">
+    <h3>Enrolled Students</h3>
+    {% if students %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Student</th>
+                    <th>Age</th>
+                    <th>GPA</th>
+                    <th>Enrolled On</th>
+                    <th>Grade</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for enrollment in students %}
+                <tr>
+                    <td>
+                        <strong>{{ enrollment.student.first_name }} {{ enrollment.student.last_name }}</strong><br>
+                        <small style="color: #718096;">{{ enrollment.student.user.email }}</small>
+                    </td>
+                    <td>{{ enrollment.student.age }}</td>
+                    <td>{{ enrollment.student.gpa }}</td>
+                    <td>{{ enrollment.enrollment_date|date:"M d, Y" }}</td>
+                    <td>
+                        <form method="POST" action="/update-grade/{{ enrollment.id }}/" style="display: flex; gap: 5px; align-items: center;">
+                            {% csrf_token %}
+                            <input type="number" name="grade" min="0" max="100" step="0.1"
+                                   value="{{ enrollment.grade|default:'' }}"
+                                   placeholder="0-100"
+                                   style="width: 80px; padding: 5px; border: 1px solid #cbd5e0; border-radius: 4px;">
+                            <button type="submit" class="btn btn-warning btn-small">Update</button>
+                            {% if enrollment.letter_grade %}
+                                <span class="badge badge-approved">{{ enrollment.letter_grade }}</span>
+                            {% endif %}
+                        </form>
+                    </td>
+                    <td>
+                        <a href="/student-detail/{{ enrollment.student.id }}/" class="btn btn-small">View Profile</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="empty-state">
+            <p>No students enrolled yet.</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+

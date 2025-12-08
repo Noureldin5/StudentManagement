@@ -10,13 +10,33 @@ class Student(models.Model):
     first_name = models.CharField(max_length=50)
     last_name = models.CharField(max_length=50)
     age = models.IntegerField()
-    gpa = models.FloatField()
     enrolled_courses = models.ManyToManyField('courses.Course', through='Enrollment', related_name='students')
     created_at = models.DateTimeField(auto_now_add=True)
 
+    @property
+    def gpa(self):
+        """Calculate GPA based on letter grades in enrolled courses"""
+        graded_enrollments = self.enrollments.exclude(grade__isnull=True)
+
+        if not graded_enrollments.exists():
+            return 0.0
+
+        total_points = 0
+        total_credits = 0
+
+        for enrollment in graded_enrollments:
+            grade_point = enrollment.grade_point
+            if grade_point is not None:
+                total_points += grade_point * enrollment.course.credits
+                total_credits += enrollment.course.credits
+
+        if total_credits == 0:
+            return 0.0
+
+        return round(total_points / total_credits, 2)
+
     def __str__(self):
         return f'Student: {self.first_name} {self.last_name}'
-
 
 class Enrollment(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='enrollments')
@@ -25,11 +45,46 @@ class Enrollment(models.Model):
                                     related_name='students_enrolled')
     enrollment_date = models.DateTimeField(auto_now_add=True)
     enrollment_deadline = models.DateTimeField(blank=True, null=True)
-    grade = models.CharField(max_length=2, blank=True, null=True)
+    grade = models.FloatField(blank=True, null=True, help_text="Numeric grade (0-100)")
 
     class Meta:
         unique_together = ['student', 'course']
         ordering = ['-enrollment_date']
+
+    @property
+    def letter_grade(self):
+        """Convert numeric grade to letter grade"""
+        if self.grade is None:
+            return None
+
+        if self.grade >= 90:
+            return 'A'
+        elif self.grade >= 80:
+            return 'B'
+        elif self.grade >= 70:
+            return 'C'
+        elif self.grade >= 60:
+            return 'D'
+        else:
+            return 'F'
+
+    @property
+    def grade_point(self):
+        """Convert letter grade to grade point for GPA calculation"""
+        letter = self.letter_grade
+
+        if letter is None:
+            return None
+
+        grade_points = {
+            'A': 4.0,
+            'B': 3.0,
+            'C': 2.0,
+            'D': 1.0,
+            'F': 0.0
+        }
+
+        return grade_points.get(letter, None)
 
     def clean(self):
         if self.course.is_full and not self.pk:  # Only check for new enrollments
@@ -130,6 +185,7 @@ class EnrollmentRequest(models.Model):
         if reason:
             self.notes = reason
         self.save()
+
 
     def __str__(self):
         return f'{self.student} - {self.course} ({self.status})'

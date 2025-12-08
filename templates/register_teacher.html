@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+
+{% block title %}Teacher Registration{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 600px; margin: 20px auto;">
+    <h2>👨‍🏫 Teacher Registration</h2>
+    <p style="color: #718096; margin-bottom: 20px;">Create your teacher account</p>
+
+    <form method="POST" action="/register-teacher/">
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="username">Username *</label>
+            <input type="text" id="username" name="username" required>
+        </div>
+
+        <div class="form-group">
+            <label for="email">Email *</label>
+            <input type="email" id="email" name="email" required>
+        </div>
+
+        <div class="form-group">
+            <label for="password">Password *</label>
+            <input type="password" id="password" name="password" required>
+        </div>
+
+        <div class="form-group">
+            <label for="first_name">First Name *</label>
+            <input type="text" id="first_name" name="first_name" required>
+        </div>
+
+        <div class="form-group">
+            <label for="last_name">Last Name *</label>
+            <input type="text" id="last_name" name="last_name" required>
+        </div>
+
+        <div class="form-group">
+            <label for="subject">Subject Specialization *</label>
+            <input type="text" id="subject" name="subject" placeholder="e.g., Computer Science" required>
+        </div>
+
+        <div style="display: flex; gap: 10px;">
+            <button type="submit" class="btn btn-success" style="flex: 1;">Register</button>
+            <a href="/login/" class="btn" style="flex: 1; text-align: center;">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
+

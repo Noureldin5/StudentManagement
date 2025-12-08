@@ -1,0 +1,181 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="card" style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); color: white; border: none; text-align: center; padding: 3rem;">
+    <h2 style="color: white; font-size: 2.5rem; margin-bottom: 1rem;">Welcome to the Student Management System 🎓</h2>
+    <p style="opacity: 0.95; font-size: 1.125rem;">A comprehensive platform for managing students, teachers, courses, and enrollments.</p>
+</div>
+
+{% if user.is_authenticated %}
+    <!-- Quick Actions for Authenticated Users -->
+    <div class="card">
+        <div class="card-header">
+            <h3 style="margin: 0;">🚀 Quick Actions</h3>
+        </div>
+        <div class="quick-actions">
+            {% if is_admin %}
+                {# Admin actions #}
+                <a href="/admin/" class="action-card">
+                    <div class="action-card-icon">⚙️</div>
+                    <h4>Admin Panel</h4>
+                    <p>System administration</p>
+                </a>
+                <a href="/teacher-dashboard/" class="action-card">
+                    <div class="action-card-icon">👨‍🏫</div>
+                    <h4>Teacher Dashboard</h4>
+                    <p>Manage courses & students</p>
+                </a>
+                <a href="/student-dashboard/" class="action-card">
+                    <div class="action-card-icon">👨‍🎓</div>
+                    <h4>Student Dashboard</h4>
+                    <p>View student perspective</p>
+                </a>
+                <a href="/courses-list/" class="action-card">
+                    <div class="action-card-icon">📚</div>
+                    <h4>All Courses</h4>
+                    <p>Browse all courses</p>
+                </a>
+                <a href="/students-list/" class="action-card">
+                    <div class="action-card-icon">👥</div>
+                    <h4>All Students</h4>
+                    <p>View all students</p>
+                </a>
+                <a href="/teachers-list/" class="action-card">
+                    <div class="action-card-icon">🎓</div>
+                    <h4>All Teachers</h4>
+                    <p>View all teachers</p>
+                </a>
+            {% elif is_teacher %}
+                {# Teacher actions #}
+                <a href="/teacher-dashboard/" class="action-card">
+                    <div class="action-card-icon">📊</div>
+                    <h4>My Dashboard</h4>
+                    <p>View your teaching overview</p>
+                </a>
+                <a href="/courses-list/" class="action-card">
+                    <div class="action-card-icon">📚</div>
+                    <h4>All Courses</h4>
+                    <p>Browse all courses</p>
+                </a>
+                <a href="/students-list/" class="action-card">
+                    <div class="action-card-icon">👥</div>
+                    <h4>All Students</h4>
+                    <p>View registered students</p>
+                </a>
+            {% elif is_student %}
+                {# Student actions #}
+                <a href="/student-dashboard/" class="action-card">
+                    <div class="action-card-icon">📊</div>
+                    <h4>My Dashboard</h4>
+                    <p>View your academic progress</p>
+                </a>
+                <a href="/courses-list/" class="action-card">
+                    <div class="action-card-icon">🔍</div>
+                    <h4>Browse Courses</h4>
+                    <p>Find courses to enroll in</p>
+                </a>
+                <a href="/students-list/" class="action-card">
+                    <div class="action-card-icon">👥</div>
+                    <h4>Fellow Students</h4>
+                    <p>See other students</p>
+                </a>
+            {% endif %}
+        </div>
+    </div>
+{% else %}
+    <!-- Actions for Guests -->
+    <div class="card">
+        <div class="card-header">
+            <h3 style="margin: 0;">🚀 Get Started</h3>
+        </div>
+        <p style="margin-bottom: 1.5rem; color: #6b7280;">Please login or register to access the system.</p>
+        <div class="quick-actions" style="grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));">
+            <a href="/login/" class="action-card">
+                <div class="action-card-icon">🔐</div>
+                <h4>Login</h4>
+                <p>Access your account</p>
+            </a>
+            <a href="/register-student/" class="action-card">
+                <div class="action-card-icon">👨‍🎓</div>
+                <h4>Register as Student</h4>
+                <p>Create a student account</p>
+            </a>
+            <a href="/register-teacher/" class="action-card">
+                <div class="action-card-icon">👨‍🏫</div>
+                <h4>Register as Teacher</h4>
+                <p>Create a teacher account</p>
+            </a>
+        </div>
+    </div>
+{% endif %}
+
+<!-- Features Section -->
+<div class="card">
+    <div class="card-header">
+        <h3 style="margin: 0;">✨ Platform Features</h3>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
+        <div style="padding: 1.5rem; background: #f9fafb; border-radius: 8px;">
+            <div style="font-size: 2rem; margin-bottom: 0.75rem;">👨‍🎓</div>
+            <h4 style="margin-bottom: 0.5rem; color: #111827;">Student Management</h4>
+            <ul style="list-style: none; padding: 0; color: #6b7280; line-height: 1.8;">
+                <li>✓ Easy registration process</li>
+                <li>✓ Automatic GPA calculation</li>
+                <li>✓ Course enrollment requests</li>
+                <li>✓ Track academic progress</li>
+            </ul>
+        </div>
+        <div style="padding: 1.5rem; background: #f9fafb; border-radius: 8px;">
+            <div style="font-size: 2rem; margin-bottom: 0.75rem;">👨‍🏫</div>
+            <h4 style="margin-bottom: 0.5rem; color: #111827;">Teacher Tools</h4>
+            <ul style="list-style: none; padding: 0; color: #6b7280; line-height: 1.8;">
+                <li>✓ Course management dashboard</li>
+                <li>✓ Approve/reject enrollments</li>
+                <li>✓ Direct student enrollment</li>
+                <li>✓ Numeric grade entry (0-100)</li>
+            </ul>
+        </div>
+        <div style="padding: 1.5rem; background: #f9fafb; border-radius: 8px;">
+            <div style="font-size: 2rem; margin-bottom: 0.75rem;">📚</div>
+            <h4 style="margin-bottom: 0.5rem; color: #111827;">Course System</h4>
+            <ul style="list-style: none; padding: 0; color: #6b7280; line-height: 1.8;">
+                <li>✓ Comprehensive course catalog</li>
+                <li>✓ Capacity management</li>
+                <li>✓ Enrollment deadlines</li>
+                <li>✓ Automatic waitlist system</li>
+            </ul>
+        </div>
+        <div style="padding: 1.5rem; background: #f9fafb; border-radius: 8px;">
+            <div style="font-size: 2rem; margin-bottom: 0.75rem;">📊</div>
+            <h4 style="margin-bottom: 0.5rem; color: #111827;">Grading System</h4>
+            <ul style="list-style: none; padding: 0; color: #6b7280; line-height: 1.8;">
+                <li>✓ Numeric grades (0-100)</li>
+                <li>✓ Auto letter grade conversion</li>
+                <li>✓ Weighted GPA calculation</li>
+                <li>✓ Real-time grade updates</li>
+            </ul>
+        </div>
+        <div style="padding: 1.5rem; background: #f9fafb; border-radius: 8px;">
+            <div style="font-size: 2rem; margin-bottom: 0.75rem;">🔐</div>
+            <h4 style="margin-bottom: 0.5rem; color: #111827;">Security</h4>
+            <ul style="list-style: none; padding: 0; color: #6b7280; line-height: 1.8;">
+                <li>✓ Role-based access control</li>
+                <li>✓ Secure authentication</li>
+                <li>✓ Permission management</li>
+                <li>✓ Data protection</li>
+            </ul>
+        </div>
+        <div style="padding: 1.5rem; background: #f9fafb; border-radius: 8px;">
+            <div style="font-size: 2rem; margin-bottom: 0.75rem;">⚡</div>
+            <h4 style="margin-bottom: 0.5rem; color: #111827;">Modern Interface</h4>
+            <ul style="list-style: none; padding: 0; color: #6b7280; line-height: 1.8;">
+                <li>✓ Clean, intuitive design</li>
+                <li>✓ Responsive layout</li>
+                <li>✓ Easy navigation</li>
+                <li>✓ Real-time updates</li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

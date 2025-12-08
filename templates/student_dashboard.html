@@ -1,0 +1,188 @@
+{% extends 'base.html' %}
+
+{% block title %}Student Dashboard{% endblock %}
+
+{% block content %}
+{% if student %}
+<!-- Welcome Header -->
+<div class="card" style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); color: white; border: none;">
+    <h2 style="color: white; margin-bottom: 0.5rem;">Welcome back, {{ student.first_name }}! 👋</h2>
+    <p style="opacity: 0.95;">Here's your academic overview</p>
+</div>
+
+<!-- Stats Grid -->
+<div class="grid">
+    <div class="stat-card blue">
+        <h3>{{ student.gpa }}</h3>
+        <p>📊 Current GPA</p>
+    </div>
+    <div class="stat-card green">
+        <h3>{{ enrollments.count }}</h3>
+        <p>📚 Enrolled Courses</p>
+    </div>
+    <div class="stat-card orange">
+        <h3>{{ pending_requests }}</h3>
+        <p>⏳ Pending Requests</p>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="card">
+    <div class="card-header">
+        <h3 style="margin: 0;">🎯 Quick Actions</h3>
+    </div>
+    <div class="quick-actions">
+        <a href="/courses-list/" class="action-card">
+            <div class="action-card-icon">🔍</div>
+            <h4>Browse Courses</h4>
+            <p>Find new courses to enroll in</p>
+        </a>
+        <a href="/students-list/" class="action-card">
+            <div class="action-card-icon">👥</div>
+            <h4>View Students</h4>
+            <p>See other students in the system</p>
+        </a>
+        <a href="#enrollments" class="action-card">
+            <div class="action-card-icon">📖</div>
+            <h4>My Courses</h4>
+            <p>View your enrolled courses</p>
+        </a>
+        <a href="#requests" class="action-card">
+            <div class="action-card-icon">📝</div>
+            <h4>My Requests</h4>
+            <p>Check enrollment request status</p>
+        </a>
+    </div>
+</div>
+
+<!-- My Enrollments -->
+<div class="card" id="enrollments">
+    <div class="card-header">
+        <h3 style="margin: 0;">📚 My Enrollments</h3>
+        <span style="background: #f3f4f6; padding: 0.5rem 1rem; border-radius: 6px; font-weight: 600; color: #374151;">
+            {{ enrollments.count }} Course{{ enrollments.count|pluralize }}
+        </span>
+    </div>
+    {% if enrollments %}
+        <div style="overflow-x: auto;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Course</th>
+                        <th>Code</th>
+                        <th>Credits</th>
+                        <th>Grade</th>
+                        <th>Enrolled On</th>
+                        <th>Instructor</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for enrollment in enrollments %}
+                    <tr>
+                        <td><strong>{{ enrollment.course.name }}</strong></td>
+                        <td><span class="badge badge-approved">{{ enrollment.course.code }}</span></td>
+                        <td>{{ enrollment.course.credits }}</td>
+                        <td>
+                            {% if enrollment.grade %}
+                                <span class="badge badge-approved">{{ enrollment.letter_grade }}</span>
+                                <small style="color: #6b7280; font-weight: 600;">({{ enrollment.grade }})</small>
+                            {% else %}
+                                <span style="color: #9ca3af; font-style: italic;">Not graded yet</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ enrollment.enrollment_date|date:"M d, Y" }}</td>
+                        <td>
+                            {% if enrollment.enrolled_by %}
+                                {{ enrollment.enrolled_by.first_name }} {{ enrollment.enrolled_by.last_name }}
+                            {% else %}
+                                <span style="color: #9ca3af; font-style: italic;">Auto-enrolled</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">📚</div>
+            <h3 style="color: #374151; margin-bottom: 0.5rem;">No Courses Yet</h3>
+            <p style="margin-bottom: 1.5rem;">You haven't enrolled in any courses. Start exploring!</p>
+            <a href="/courses-list/" class="btn btn-success">Browse Available Courses</a>
+        </div>
+    {% endif %}
+</div>
+
+<!-- My Enrollment Requests -->
+<div class="card" id="requests">
+    <div class="card-header">
+        <h3 style="margin: 0;">📝 Enrollment Requests</h3>
+        <span style="background: #f3f4f6; padding: 0.5rem 1rem; border-radius: 6px; font-weight: 600; color: #374151;">
+            {{ requests.count }} Request{{ requests.count|pluralize }}
+        </span>
+    </div>
+    {% if requests %}
+        <div style="overflow-x: auto;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Course</th>
+                        <th>Status</th>
+                        <th>Requested</th>
+                        <th>Reviewed By</th>
+                        <th>Notes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for request in requests %}
+                    <tr>
+                        <td>
+                            <strong>{{ request.course.name }}</strong><br>
+                            <small style="color: #6b7280;">{{ request.course.code }}</small>
+                        </td>
+                        <td>
+                            <span class="badge badge-{{ request.status }}">
+                                {% if request.status == 'pending' %}⏳{% elif request.status == 'approved' %}✅{% elif request.status == 'rejected' %}❌{% else %}📋{% endif %}
+                                {{ request.get_status_display|upper }}
+                            </span>
+                        </td>
+                        <td>{{ request.requested_at|date:"M d, Y g:i A" }}</td>
+                        <td>
+                            {% if request.reviewed_by %}
+                                <strong>{{ request.reviewed_by.first_name }} {{ request.reviewed_by.last_name }}</strong><br>
+                                <small style="color: #6b7280;">{{ request.reviewed_at|date:"M d, Y" }}</small>
+                            {% else %}
+                                <span style="color: #9ca3af; font-style: italic;">Awaiting review</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <small>{{ request.notes|default:"—" }}</small>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">📝</div>
+            <h3 style="color: #374151; margin-bottom: 0.5rem;">No Requests Yet</h3>
+            <p style="margin-bottom: 1.5rem;">You haven't requested enrollment in any courses.</p>
+            <a href="/courses-list/" class="btn btn-success">Request Course Enrollment</a>
+        </div>
+    {% endif %}
+</div>
+
+{% else %}
+<!-- Admin View - No Student -->
+<div class="card">
+    <div style="text-align: center; padding: 3rem;">
+        <div style="font-size: 5rem; margin-bottom: 1rem;">👤</div>
+        <h2>Student Dashboard (Admin View)</h2>
+        <p style="color: #6b7280; margin: 1rem 0 2rem;">No students in the system yet. Register a student to see their dashboard.</p>
+        <a href="/register-student/" class="btn btn-success">Register New Student</a>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+

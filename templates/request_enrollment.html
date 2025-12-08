@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+
+{% block title %}Request Enrollment{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 600px; margin: 20px auto;">
+    <h2>📝 Request Course Enrollment</h2>
+
+    <div style="background: #f7fafc; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+        <h3>{{ course.code }} - {{ course.name }}</h3>
+        <p><strong>Credits:</strong> {{ course.credits }}</p>
+        <p><strong>Available Spots:</strong> {{ course.available_spots }}/{{ course.openings }}</p>
+        {% if course.enrollment_deadline %}
+            <p><strong>Deadline:</strong> {{ course.enrollment_deadline|date:"F d, Y h:i A" }}</p>
+        {% endif %}
+    </div>
+
+    {% if not course.is_enrollment_open %}
+        <div class="alert alert-error">
+            ⚠️ Enrollment deadline has passed for this course.
+        </div>
+    {% elif course.available_spots == 0 %}
+        <div class="alert alert-warning">
+            ℹ️ This course is full. Your request will be waitlisted.
+        </div>
+    {% endif %}
+
+    <form method="POST" action="/request-enrollment/{{ course.id }}/">
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="notes">Notes (Optional)</label>
+            <textarea id="notes" name="notes" rows="4" placeholder="Why do you want to enroll in this course?"></textarea>
+        </div>
+
+        <div style="display: flex; gap: 10px;">
+            <button type="submit" class="btn btn-success" style="flex: 1;"
+                    {% if not course.is_enrollment_open %}disabled{% endif %}>
+                Submit Request
+            </button>
+            <a href="/course-detail/{{ course.id }}/" class="btn" style="flex: 1; text-align: center;">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
+

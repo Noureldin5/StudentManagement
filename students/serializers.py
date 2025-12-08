@@ -6,6 +6,7 @@ from courses.serializers import CourseSerializer
 
 class StudentSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
+    gpa = serializers.FloatField(read_only=True)  # Calculated property, read-only
 
     class Meta:
         model = Student
@@ -18,7 +19,6 @@ class StudentRegistrationSerializer(serializers.Serializer):
     first_name = serializers.CharField(max_length=50)
     last_name = serializers.CharField(max_length=50)
     age = serializers.IntegerField()
-    gpa = serializers.FloatField(default=0.0)
 
     def create(self, validated_data):
         user = User.objects.create_user(
@@ -31,8 +31,7 @@ class StudentRegistrationSerializer(serializers.Serializer):
             user=user,
             first_name=validated_data['first_name'],
             last_name=validated_data['last_name'],
-            age=validated_data['age'],
-            gpa=validated_data.get('gpa', 0.0)
+            age=validated_data['age']
         )
 
         return student
@@ -42,10 +41,11 @@ class EnrollmentSerializer(serializers.ModelSerializer):
     student = StudentSerializer(read_only=True)
     course = CourseSerializer(read_only=True)
     enrolled_by = TeacherSerializer(read_only=True)
+    letter_grade = serializers.CharField(read_only=True)  # Calculated property
 
     class Meta:
         model = Enrollment
-        fields = ['id', 'student', 'course', 'enrolled_by', 'enrollment_date', 'grade']
+        fields = ['id', 'student', 'course', 'enrolled_by', 'enrollment_date', 'grade', 'letter_grade']
 
 class EnrollmentRequestSerializer(serializers.ModelSerializer):
     student = StudentSerializer(read_only=True)

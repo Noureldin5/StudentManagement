@@ -57,6 +57,59 @@ A comprehensive REST API built with Django and Django REST Framework for managin
   - CSRF protection for session-based requests
   - Staff privileges for teachers
 
+## 🎓 Grading System
+
+### How It Works
+
+1. **Students register WITHOUT entering GPA**
+   - GPA starts at 0.0
+   - GPA is calculated automatically from course grades
+
+2. **Enrollment happens WITHOUT grades**
+   - When a teacher approves enrollment, no grade is assigned
+   - Students can attend the course
+
+3. **Teachers assign numeric grades (0-100) AFTER enrollment**
+   - Enter grades through the teacher dashboard
+   - System automatically converts to letter grades
+   - Student GPA recalculates immediately
+
+### Grade Scale
+
+| Numeric Grade | Letter Grade | Grade Points (for GPA) |
+|---------------|--------------|------------------------|
+| 90 - 100      | A            | 4.0                    |
+| 80 - 89       | B            | 3.0                    |
+| 70 - 79       | C            | 2.0                    |
+| 60 - 69       | D            | 1.0                    |
+| 0 - 59        | F            | 0.0                    |
+
+### GPA Calculation
+
+GPA is weighted by course credits:
+
+```
+GPA = (Sum of: grade_point × credits) / (Total credits)
+```
+
+**Example:**
+- CS101 (3 credits): Grade = 92 → A → 4.0 points
+- MATH101 (4 credits): Grade = 85 → B → 3.0 points
+
+```
+GPA = (4.0 × 3 + 3.0 × 4) / (3 + 4)
+    = (12 + 12) / 7
+    = 3.43
+```
+
+### Key Benefits
+
+- ✅ **Realistic**: Students don't have GPA at registration
+- ✅ **Automatic**: No manual GPA calculation errors
+- ✅ **Flexible**: Teachers use familiar 0-100 scale
+- ✅ **Transparent**: Students see both numeric and letter grades
+- ✅ **Accurate**: GPA updates automatically when grades change
+
 ## 🛠️ Tech Stack
 
 - **Backend Framework:** Django 5.2+
@@ -250,10 +303,11 @@ Content-Type: application/json
   "password": "SecurePass123",
   "first_name": "John",
   "last_name": "Doe",
-  "age": 20,
-  "gpa": 3.5
+  "age": 20
 }
 ```
+
+**Note:** No GPA field! GPA is calculated automatically from course grades.
 
 **Response:**
 ```json
@@ -376,9 +430,11 @@ Content-Type: application/json
 
 {
   "teacher_id": 1,
-  "grade": "A"
+  "grade": 87.5
 }
 ```
+
+**Note:** Grade must be numeric (0-100). Letter grade is calculated automatically.
 
 **Response:**
 ```json
@@ -387,7 +443,9 @@ Content-Type: application/json
   "student": "John Doe",
   "course": "Introduction to Programming",
   "old_grade": null,
-  "new_grade": "A"
+  "old_letter_grade": null,
+  "new_grade": 87.5,
+  "new_letter_grade": "B"
 }
 ```
 

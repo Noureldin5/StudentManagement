@@ -264,9 +264,24 @@ def update_grade(request, enrollment_id):
                 'error': 'You do not have permission to update grades for this course'
             }, status=403)
 
-        # Update grade
+        # Update grade - must be numeric (0-100) or None
+        grade = data.get('grade')
         old_grade = enrollment.grade
-        enrollment.grade = data.get('grade')
+        old_letter = enrollment.letter_grade
+
+        if grade is not None:
+            try:
+                grade = float(grade)
+                if not (0 <= grade <= 100):
+                    return JsonResponse({
+                        'error': 'Grade must be between 0 and 100'
+                    }, status=400)
+            except (ValueError, TypeError):
+                return JsonResponse({
+                    'error': 'Grade must be a valid number'
+                }, status=400)
+
+        enrollment.grade = grade
         enrollment.save()
 
         return JsonResponse({
@@ -274,7 +289,9 @@ def update_grade(request, enrollment_id):
             'student': f"{enrollment.student.first_name} {enrollment.student.last_name}",
             'course': enrollment.course.name,
             'old_grade': old_grade,
-            'new_grade': enrollment.grade
+            'old_letter_grade': old_letter,
+            'new_grade': enrollment.grade,
+            'new_letter_grade': enrollment.letter_grade
         })
 
     except Exception as e:

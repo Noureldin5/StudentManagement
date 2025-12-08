@@ -1,0 +1,180 @@
+{% extends 'base.html' %}
+
+{% block title %}Manage {{ course.name }}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>📚 Manage Course: {{ course.code }} - {{ course.name }}</h2>
+    <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+        <div class="stat-card">
+            <h3>{{ enrollments.count }}/{{ course.openings }}</h3>
+            <p>Enrolled Students</p>
+        </div>
+        <div class="stat-card">
+            <h3>{{ course.available_spots }}</h3>
+            <p>Available Spots</p>
+        </div>
+        <div class="stat-card">
+            <h3>{{ pending_requests.count }}</h3>
+            <p>Pending Requests</p>
+        </div>
+        <div class="stat-card">
+            <h3>{{ course.credits }}</h3>
+            <p>Credits</p>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <h3>⚙️ Course Settings</h3>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+        <div>
+            <h4>Enrollment Deadline</h4>
+            <form method="POST" action="/update-deadline/{{ course.id }}/">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="enrollment_deadline">Set Deadline</label>
+                    <input type="datetime-local"
+                           id="enrollment_deadline"
+                           name="enrollment_deadline"
+                           value="{% if course.enrollment_deadline %}{{ course.enrollment_deadline|date:'Y-m-d\TH:i' }}{% endif %}"
+                           class="form-control">
+                    <small style="color: #718096;">Current: {% if course.enrollment_deadline %}{{ course.enrollment_deadline|date:"F d, Y g:i A" }}{% else %}No deadline set{% endif %}</small>
+                </div>
+                <button type="submit" class="btn btn-warning">Update Deadline</button>
+                <button type="submit" class="btn" onclick="document.getElementById('enrollment_deadline').value=''; return true;">Remove Deadline</button>
+            </form>
+        </div>
+
+        <div>
+            <h4>Direct Enrollment</h4>
+            <form method="POST" action="/direct-enroll/{{ course.id }}/">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="student_id">Select Student</label>
+                    <select name="student_id" id="student_id" required>
+                        <option value="">-- Choose a student --</option>
+                        {% for student in available_students %}
+                            <option value="{{ student.id }}">
+                                {{ student.first_name }} {{ student.last_name }} (GPA: {{ student.gpa }})
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-success" {% if not available_students %}disabled{% endif %}>
+                    Enroll Student
+                </button>
+                {% if not available_students %}
+                    <small style="color: #718096; display: block; margin-top: 5px;">All students are enrolled</small>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <h3>📝 Pending Enrollment Requests ({{ pending_requests.count }})</h3>
+    {% if pending_requests %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Student</th>
+                    <th>GPA</th>
+                    <th>Status</th>
+                    <th>Requested On</th>
+                    <th>Notes</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for request in pending_requests %}
+                <tr>
+                    <td>
+                        <strong>{{ request.student.first_name }} {{ request.student.last_name }}</strong><br>
+                        <small style="color: #718096;">{{ request.student.user.email }}</small>
+                    </td>
+                    <td>{{ request.student.gpa }}</td>
+                    <td>
+                        <span class="badge badge-{{ request.status }}">
+                            {{ request.get_status_display|upper }}
+                        </span>
+                    </td>
+                    <td>{{ request.requested_at|date:"M d, Y g:i A" }}</td>
+                    <td>{{ request.notes|default:"-" }}</td>
+                    <td>
+                        <form method="POST" action="/approve-request/{{ request.id }}/" style="display: inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-success btn-small">Approve</button>
+                        </form>
+                        <form method="POST" action="/reject-request/{{ request.id }}/" style="display: inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-danger btn-small">Reject</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="empty-state">
+            <p>No pending enrollment requests.</p>
+        </div>
+    {% endif %}
+</div>
+
+<div class="card">
+    <h3>👥 Enrolled Students ({{ enrollments.count }})</h3>
+    {% if enrollments %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Student</th>
+                    <th>Age</th>
+                    <th>GPA</th>
+                    <th>Enrolled On</th>
+                    <th>Current Grade</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for enrollment in enrollments %}
+                <tr>
+                    <td>
+                        <strong>{{ enrollment.student.first_name }} {{ enrollment.student.last_name }}</strong><br>
+                        <small style="color: #718096;">{{ enrollment.student.user.email }}</small>
+                    </td>
+                    <td>{{ enrollment.student.age }}</td>
+                    <td>{{ enrollment.student.gpa }}</td>
+                    <td>{{ enrollment.enrollment_date|date:"M d, Y" }}</td>
+                    <td>
+                        {% if enrollment.grade %}
+                            <span class="badge badge-approved">{{ enrollment.letter_grade }}</span>
+                            <small style="color: #718096;">({{ enrollment.grade }})</small>
+                        {% else %}
+                            <span style="color: #718096;">Not graded</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="/student-detail/{{ enrollment.student.id }}/" class="btn btn-small">View Profile</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="empty-state">
+            <p>No students enrolled yet.</p>
+        </div>
+    {% endif %}
+</div>
+
+<div class="card">
+    <h3>🎯 Quick Actions</h3>
+    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <a href="/teacher-course-students/{{ course.id }}/" class="btn btn-success">Grade Students</a>
+        <a href="/course-detail/{{ course.id }}/" class="btn">View Course Details</a>
+        <a href="/teacher-dashboard/" class="btn">Back to Dashboard</a>
+    </div>
+</div>
+{% endblock %}
+

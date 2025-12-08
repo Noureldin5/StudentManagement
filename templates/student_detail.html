@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ student.first_name }} {{ student.last_name }}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>{{ student.first_name }} {{ student.last_name }}</h2>
+
+    <div class="grid">
+        <div class="stat-card">
+            <h3>{{ student.age }}</h3>
+            <p>Age</p>
+        </div>
+        <div class="stat-card">
+            <h3>{{ student.gpa }}</h3>
+            <p>GPA</p>
+        </div>
+        <div class="stat-card">
+            <h3>{{ enrollments.count }}</h3>
+            <p>Enrolled Courses</p>
+        </div>
+    </div>
+
+    <div style="margin-top: 20px;">
+        <p><strong>Email:</strong> {{ student.user.email }}</p>
+        <p><strong>Username:</strong> {{ student.user.username }}</p>
+        <p><strong>Joined:</strong> {{ student.created_at|date:"F d, Y" }}</p>
+    </div>
+</div>
+
+<div class="card">
+    <h3>Enrolled Courses</h3>
+    {% if enrollments %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Course</th>
+                    <th>Code</th>
+                    <th>Credits</th>
+                    <th>Grade</th>
+                    <th>Enrolled On</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for enrollment in enrollments %}
+                <tr>
+                    <td>{{ enrollment.course.name }}</td>
+                    <td><strong>{{ enrollment.course.code }}</strong></td>
+                    <td>{{ enrollment.course.credits }}</td>
+                    <td>
+                        {% if enrollment.grade %}
+                            <span class="badge badge-approved">{{ enrollment.letter_grade }}</span>
+                            <small style="color: #718096;">({{ enrollment.grade }})</small>
+                        {% else %}
+                            <span style="color: #718096;">Not graded</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ enrollment.enrollment_date|date:"M d, Y" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="empty-state">
+            <p>No course enrollments.</p>
+        </div>
+    {% endif %}
+</div>
+
+<div class="card">
+    <a href="/students-list/" class="btn">Back to Students</a>
+</div>
+{% endblock %}
+

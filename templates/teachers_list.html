@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+
+{% block title %}Teachers List{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>👨‍🏫 All Teachers</h2>
+    {% if teachers %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Subject</th>
+                    <th>Email</th>
+                    <th>Courses</th>
+                    <th>Joined</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for teacher in teachers %}
+                <tr>
+                    <td><strong>{{ teacher.first_name }} {{ teacher.last_name }}</strong></td>
+                    <td>{{ teacher.subject }}</td>
+                    <td>{{ teacher.user.email }}</td>
+                    <td>{{ teacher.courses.count }}</td>
+                    <td>{{ teacher.created_at|date:"M d, Y" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="empty-state">
+            <p>No teachers registered yet.</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+

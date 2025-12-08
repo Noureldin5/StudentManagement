@@ -1,0 +1,203 @@
+{% extends 'base.html' %}
+
+{% block title %}Teacher Dashboard{% endblock %}
+
+{% block content %}
+{% if teacher %}
+<!-- Welcome Header -->
+<div class="card" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none;">
+    <h2 style="color: white; margin-bottom: 0.5rem;">Welcome, Professor {{ teacher.first_name }} {{ teacher.last_name }}! 👨‍🏫</h2>
+    <p style="opacity: 0.95;"><strong>Subject:</strong> {{ teacher.subject }}</p>
+</div>
+
+<!-- Stats Grid -->
+<div class="grid">
+    <div class="stat-card">
+        <h3>{{ courses.count }}</h3>
+        <p>📚 My Courses</p>
+    </div>
+    <div class="stat-card orange">
+        <h3>{{ pending_count }}</h3>
+        <p>⏳ Pending Requests</p>
+    </div>
+    <div class="stat-card green">
+        <h3>{{ total_students }}</h3>
+        <p>👥 Total Students</p>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="card">
+    <div class="card-header">
+        <h3 style="margin: 0;">🎯 Quick Actions</h3>
+    </div>
+    <div class="quick-actions">
+        <a href="/courses-list/" class="action-card">
+            <div class="action-card-icon">📖</div>
+            <h4>All Courses</h4>
+            <p>Browse all available courses</p>
+        </a>
+        <a href="/students-list/" class="action-card">
+            <div class="action-card-icon">👥</div>
+            <h4>All Students</h4>
+            <p>View all registered students</p>
+        </a>
+        <a href="#courses" class="action-card">
+            <div class="action-card-icon">🎓</div>
+            <h4>My Courses</h4>
+            <p>Manage your courses</p>
+        </a>
+        <a href="#requests" class="action-card">
+            <div class="action-card-icon">📝</div>
+            <h4>Review Requests</h4>
+            <p>Approve or reject enrollments</p>
+        </a>
+    </div>
+</div>
+
+<!-- My Courses -->
+<div class="card" id="courses">
+    <div class="card-header">
+        <h3 style="margin: 0;">📚 My Courses</h3>
+        <span style="background: #f3f4f6; padding: 0.5rem 1rem; border-radius: 6px; font-weight: 600; color: #374151;">
+            {{ courses.count }} Course{{ courses.count|pluralize }}
+        </span>
+    </div>
+    {% if courses %}
+        <div style="overflow-x: auto;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Code</th>
+                        <th>Course Name</th>
+                        <th>Credits</th>
+                        <th>Capacity</th>
+                        <th>Enrollment Deadline</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for course in courses %}
+                    <tr>
+                        <td><span class="badge badge-approved" style="font-size: 0.95rem;">{{ course.code }}</span></td>
+                        <td><strong>{{ course.name }}</strong></td>
+                        <td>{{ course.credits }}</td>
+                        <td>
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <strong>{{ course.enrolled_count }}/{{ course.openings }}</strong>
+                                {% if course.available_spots > 0 %}
+                                    <span class="badge badge-approved">{{ course.available_spots }} spots</span>
+                                {% else %}
+                                    <span class="badge badge-rejected">Full</span>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            {% if course.enrollment_deadline %}
+                                {{ course.enrollment_deadline|date:"M d, Y" }}
+                            {% else %}
+                                <span style="color: #9ca3af; font-style: italic;">No deadline</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                                <a href="/course-detail/{{ course.id }}/" class="btn btn-small btn-secondary">View</a>
+                                <a href="/manage-course/{{ course.id }}/" class="btn btn-small btn-warning">Manage</a>
+                                <a href="/teacher-course-students/{{ course.id }}/" class="btn btn-small btn-success">Grade</a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">📚</div>
+            <h3 style="color: #374151; margin-bottom: 0.5rem;">No Courses Assigned</h3>
+            <p>You don't have any courses assigned yet. Contact your administrator.</p>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Pending Enrollment Requests -->
+<div class="card" id="requests">
+    <div class="card-header">
+        <h3 style="margin: 0;">📝 Pending Enrollment Requests</h3>
+        <span style="background: {% if pending_count > 0 %}#fef3c7{% else %}#f3f4f6{% endif %}; padding: 0.5rem 1rem; border-radius: 6px; font-weight: 600; color: {% if pending_count > 0 %}#92400e{% else %}#374151{% endif %};">
+            {{ pending_count }} Pending
+        </span>
+    </div>
+    {% if pending_requests %}
+        <div style="overflow-x: auto;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Student</th>
+                        <th>Course</th>
+                        <th>GPA</th>
+                        <th>Status</th>
+                        <th>Requested On</th>
+                        <th>Notes</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for request in pending_requests %}
+                    <tr>
+                        <td>
+                            <strong>{{ request.student.first_name }} {{ request.student.last_name }}</strong><br>
+                            <small style="color: #6b7280;">Age: {{ request.student.age }}</small>
+                        </td>
+                        <td>
+                            <strong>{{ request.course.name }}</strong><br>
+                            <small style="color: #6b7280;">{{ request.course.code }}</small>
+                        </td>
+                        <td><span class="badge badge-approved">{{ request.student.gpa }}</span></td>
+                        <td>
+                            <span class="badge badge-{{ request.status }}">
+                                {% if request.status == 'pending' %}⏳{% elif request.status == 'waitlisted' %}📋{% endif %}
+                                {{ request.get_status_display|upper }}
+                            </span>
+                        </td>
+                        <td>{{ request.requested_at|date:"M d, Y" }}</td>
+                        <td><small>{{ request.notes|default:"—" }}</small></td>
+                        <td>
+                            <div style="display: flex; gap: 0.5rem;">
+                                <form method="POST" action="/approve-request/{{ request.id }}/" style="display: inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-success btn-small">✓ Approve</button>
+                                </form>
+                                <form method="POST" action="/reject-request/{{ request.id }}/" style="display: inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-danger btn-small">✗ Reject</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">✅</div>
+            <h3 style="color: #374151; margin-bottom: 0.5rem;">All Caught Up!</h3>
+            <p>No pending enrollment requests at this time.</p>
+        </div>
+    {% endif %}
+</div>
+
+{% else %}
+<!-- Admin View - No Teacher -->
+<div class="card">
+    <div style="text-align: center; padding: 3rem;">
+        <div style="font-size: 5rem; margin-bottom: 1rem;">👨‍🏫</div>
+        <h2>Teacher Dashboard (Admin View)</h2>
+        <p style="color: #6b7280; margin: 1rem 0 2rem;">No teachers in the system yet. Register a teacher to see their dashboard.</p>
+        <a href="/register-teacher/" class="btn btn-success">Register New Teacher</a>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+

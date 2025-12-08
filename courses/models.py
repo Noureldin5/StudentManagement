@@ -17,8 +17,12 @@ class Course(models.Model):
         return self.enrollments.count()
 
     @property
+    def enrolled_count(self):
+        return self.enrollments.count()
+
+    @property
     def available_spots(self):
-        return max(0, self.openings -self.enrolled_students)
+        return max(0, self.openings - self.enrolled_students)
     @property
     def is_full(self):
         return self.enrolled_students >= self.openings
