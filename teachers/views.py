@@ -268,7 +268,7 @@ def update_grade(request, enrollment_id):
         grade = data.get('grade')
         old_grade = enrollment.grade
         old_letter = enrollment.letter_grade
-
+        
         if grade is not None:
             try:
                 grade = float(grade)
@@ -280,7 +280,7 @@ def update_grade(request, enrollment_id):
                 return JsonResponse({
                     'error': 'Grade must be a valid number'
                 }, status=400)
-
+        
         enrollment.grade = grade
         enrollment.save()
 

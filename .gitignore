@@ -3,6 +3,7 @@
 *$py.class
 *.so
 .Python
+__pycache__/
 build/
 develop-eggs/
 dist/

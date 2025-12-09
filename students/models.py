@@ -3,6 +3,8 @@ from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from teachers.models import Teacher
+from django.core.mail import send_mail
+from django.conf import settings
 
 
 class Student(models.Model):
@@ -56,7 +58,7 @@ class Enrollment(models.Model):
         """Convert numeric grade to letter grade"""
         if self.grade is None:
             return None
-
+        
         if self.grade >= 90:
             return 'A'
         elif self.grade >= 80:
@@ -67,15 +69,15 @@ class Enrollment(models.Model):
             return 'D'
         else:
             return 'F'
-
+    
     @property
     def grade_point(self):
         """Convert letter grade to grade point for GPA calculation"""
         letter = self.letter_grade
-
+        
         if letter is None:
             return None
-
+        
         grade_points = {
             'A': 4.0,
             'B': 3.0,
@@ -83,7 +85,7 @@ class Enrollment(models.Model):
             'D': 1.0,
             'F': 0.0
         }
-
+        
         return grade_points.get(letter, None)
 
     def clean(self):
@@ -174,6 +176,32 @@ class EnrollmentRequest(models.Model):
         self.reviewed_at = timezone.now()
         self.save()
 
+        # Send approval email
+        student_email = self.student.user.email
+        if student_email:
+            try:
+                send_mail(
+                    subject=f'Enrollment Approved - {self.course.code}',
+                    message=f'''Dear {self.student.first_name},
+
+Your enrollment request for {self.course.code} - {self.course.name} has been approved.
+
+You are now enrolled in this course.
+
+Best regards,
+Academic Office
+''',
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[student_email],
+                    fail_silently=False,
+                )
+                print(f"Approval email sent to {student_email}")
+            except Exception as e:
+                print(f"Failed to send approval email to {student_email}: {e}")
+        else:
+            print(f"No email address for student {self.student.first_name} {self.student.last_name}")
+
+        # Process waitlist after successful enrollment
         self.course.process_waitlist()
 
         return enrollment
@@ -186,6 +214,33 @@ class EnrollmentRequest(models.Model):
             self.notes = reason
         self.save()
 
+        # Send rejection email
+        student_email = self.student.user.email
+        if student_email:
+            try:
+                send_mail(
+                    subject=f'Enrollment Request rejected - {self.course.code}',
+                    message=f'''Dear {self.student.first_name},
+
+Your enrollment request for {self.course.code} - {self.course.name} has been reviewed.
+
+Status: Rejected
+Reason: {reason if reason else 'No specific reason provided'}
+
+Please contact your academic advisor for assistance.
+
+Best regards,
+Academic Office
+''',
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[student_email],
+                    fail_silently=False,
+                )
+                print(f"Rejection email sent to {student_email}")
+            except Exception as e:
+                print(f"Failed to send rejection email to {student_email}: {e}")
+        else:
+            print(f"No email address for student {self.student.first_name} {self.student.last_name}")
 
     def __str__(self):
         return f'{self.student} - {self.course} ({self.status})'

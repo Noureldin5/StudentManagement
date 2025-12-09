@@ -1,3 +1,4 @@
+
 from django.db import models
 from django.utils import timezone
 from django.core.exceptions import ValidationError
@@ -11,6 +12,7 @@ class Course(models.Model):
     openings = models.PositiveIntegerField(default=20)
     enrollment_deadline = models.DateTimeField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
 
     @property
     def enrolled_students(self):
@@ -62,6 +64,7 @@ class Course(models.Model):
                 next_request.save()
             except ValidationError:
                 break
+
 
     def __str__(self):
         return f'{self.code} - {self.name}'

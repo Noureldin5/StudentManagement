@@ -338,24 +338,11 @@ def approve_request_view(request, request_id):
                 messages.error(request, 'Cannot approve - course is full')
                 return redirect('/teacher-dashboard/')
 
-            # Create enrollment
-            Enrollment.objects.create(
-                student=enrollment_request.student,
-                course=enrollment_request.course,
-                enrolled_by=teacher,
-                enrollment_deadline=enrollment_request.enrollment_deadline
-            )
-
-            # Update request
-            enrollment_request.status = 'approved'
-            enrollment_request.reviewed_by = teacher
-            enrollment_request.reviewed_at = timezone.now()
-            enrollment_request.save()
+            # Use the model's approve method (handles enrollment creation, email, and waitlist)
+            enrollment_request.approve(teacher)
 
             messages.success(request, f'Approved enrollment for {enrollment_request.student.first_name} {enrollment_request.student.last_name}')
 
-            # Process waitlist
-            enrollment_request.course.process_waitlist()
 
         except Exception as e:
             messages.error(request, f'Error: {str(e)}')
@@ -385,12 +372,9 @@ def reject_request_view(request, request_id):
                     messages.error(request, 'You are not assigned to this course')
                     return redirect('/teacher-dashboard/')
 
-            # Update request
-            enrollment_request.status = 'rejected'
-            enrollment_request.reviewed_by = teacher
-            enrollment_request.reviewed_at = timezone.now()
-            enrollment_request.notes = request.POST.get('reason', 'Rejected by instructor')
-            enrollment_request.save()
+            # Use the model's reject method (handles status update and email)
+            reason = request.POST.get('reason', 'Rejected by instructor')
+            enrollment_request.reject(teacher, reason)
 
             messages.warning(request, f'Rejected enrollment request from {enrollment_request.student.first_name} {enrollment_request.student.last_name}')
 
