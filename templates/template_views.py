@@ -9,6 +9,7 @@ from teachers.models import Teacher
 from courses.models import Course
 from django.utils import timezone
 from functools import wraps
+from activity_logger import ActivityLogger
 
 
 def get_user_type(user):
@@ -74,9 +75,16 @@ def login_view(request):
         password = request.POST.get('password')
         user = authenticate(request, username=username, password=password)
 
+        # Get IP address and user agent
+        ip_address = request.META.get('REMOTE_ADDR')
+        user_agent = request.META.get('HTTP_USER_AGENT')
+
         if user:
             login(request, user)
             messages.success(request, f'Welcome back, {user.username}!')
+            
+            # Log successful login
+            ActivityLogger.log_login(user, success=True, ip_address=ip_address, user_agent=user_agent)
 
             # Redirect based on user type
             user_type = get_user_type(user)
@@ -92,12 +100,23 @@ def login_view(request):
                 return redirect('/login/')
         else:
             messages.error(request, 'Invalid username or password')
+            # Log failed login attempt
+            ActivityLogger.log_login(None, success=False, ip_address=ip_address, user_agent=user_agent)
 
     return render(request, 'login.html')
 
 
 def logout_view(request):
     """User logout"""
+    # Get IP address and user agent before logout
+    ip_address = request.META.get('REMOTE_ADDR')
+    user_agent = request.META.get('HTTP_USER_AGENT')
+    user = request.user if request.user.is_authenticated else None
+    
+    # Log logout
+    if user:
+        ActivityLogger.log_logout(user, ip_address=ip_address, user_agent=user_agent)
+    
     logout(request)
     messages.success(request, 'Logged out successfully')
     return redirect('/')
@@ -121,6 +140,9 @@ def register_student_view(request):
                 last_name=request.POST['last_name'],
                 age=int(request.POST['age'])
             )
+
+            # Log registration
+            ActivityLogger.log_registration(user, 'student')
 
             messages.success(request, 'Registration successful! Please login.')
             return redirect('/login/')
@@ -150,6 +172,9 @@ def register_teacher_view(request):
                 last_name=request.POST['last_name'],
                 subject=request.POST['subject']
             )
+
+            # Log registration
+            ActivityLogger.log_registration(user, 'teacher')
 
             messages.success(request, 'Teacher registration successful! Please login.')
             return redirect('/login/')
@@ -222,6 +247,9 @@ def request_enrollment_view(request, course_id):
                 notes=request.POST.get('notes', ''),
                 status=status
             )
+
+            # Log enrollment request
+            ActivityLogger.log_enrollment_request(student, course, 'created')
 
             if status == 'waitlisted':
                 messages.warning(request, f'Course is full. You have been added to the waitlist.')
@@ -341,6 +369,14 @@ def approve_request_view(request, request_id):
             # Use the model's approve method (handles enrollment creation, email, and waitlist)
             enrollment_request.approve(teacher)
 
+            # Log approval
+            ActivityLogger.log_enrollment_request(
+                enrollment_request.student, 
+                enrollment_request.course, 
+                'approved', 
+                teacher
+            )
+
             messages.success(request, f'Approved enrollment for {enrollment_request.student.first_name} {enrollment_request.student.last_name}')
 
 
@@ -375,6 +411,15 @@ def reject_request_view(request, request_id):
             # Use the model's reject method (handles status update and email)
             reason = request.POST.get('reason', 'Rejected by instructor')
             enrollment_request.reject(teacher, reason)
+
+            # Log rejection
+            ActivityLogger.log_enrollment_request(
+                enrollment_request.student, 
+                enrollment_request.course, 
+                'rejected', 
+                teacher,
+                reason
+            )
 
             messages.warning(request, f'Rejected enrollment request from {enrollment_request.student.first_name} {enrollment_request.student.last_name}')
 
@@ -439,8 +484,13 @@ def update_grade_view(request, enrollment_id):
                 try:
                     grade = float(grade_str)
                     if 0 <= grade <= 100:
+                        old_grade = enrollment.grade
                         enrollment.grade = grade
                         enrollment.save()
+                        
+                        # Log grade update
+                        ActivityLogger.log_grade_update(enrollment, old_grade, grade, teacher)
+                        
                         messages.success(request, f'Updated grade for {enrollment.student.first_name} {enrollment.student.last_name} to {grade} ({enrollment.letter_grade})')
                     else:
                         messages.error(request, 'Grade must be between 0 and 100')
@@ -448,8 +498,13 @@ def update_grade_view(request, enrollment_id):
                     messages.error(request, 'Grade must be a valid number')
             elif grade_str == '':
                 # Clear grade
+                old_grade = enrollment.grade
                 enrollment.grade = None
                 enrollment.save()
+                
+                # Log grade clearing
+                ActivityLogger.log_grade_update(enrollment, old_grade, None, teacher)
+                
                 messages.success(request, f'Cleared grade for {enrollment.student.first_name} {enrollment.student.last_name}')
 
         except Exception as e:
@@ -513,12 +568,15 @@ def direct_enroll_view(request, course_id):
                 return redirect('/teacher-course-students/' + str(course_id) + '/')
 
             # Create enrollment
-            Enrollment.objects.create(
+            enrollment = Enrollment.objects.create(
                 student=student,
                 course=course,
                 enrolled_by=teacher,
                 enrollment_deadline=course.enrollment_deadline
             )
+            
+            # Log direct enrollment
+            ActivityLogger.log_enrollment(student, course, teacher, "direct_enroll")
 
             messages.success(request, f'Successfully enrolled {student.first_name} {student.last_name} in {course.name}')
             return redirect('/teacher-course-students/' + str(course_id) + '/')
@@ -568,6 +626,9 @@ def update_deadline_view(request, course_id):
             old_deadline = course.enrollment_deadline
             course.enrollment_deadline = deadline
             course.save()
+
+            # Log deadline update
+            ActivityLogger.log_course_deadline_update(course, old_deadline, deadline, teacher)
 
             # Update pending enrollment requests
             EnrollmentRequest.objects.filter(

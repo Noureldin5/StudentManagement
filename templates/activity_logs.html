@@ -1,0 +1,205 @@
+{% extends 'base.html' %}
+
+{% block title %}Activity Logs - Student Management System{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1 class="mb-4">📊 Activity Logs & Audit Trail</h1>
+
+    <!-- Statistics Cards -->
+    {% if stats %}
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card text-white bg-primary mb-3">
+                <div class="card-header">Total Activities (Last {{ stats.period_days }} Days)</div>
+                <div class="card-body">
+                    <h2 class="card-title">{{ stats.total_activities }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-white bg-success mb-3">
+                <div class="card-header">Top Action Type</div>
+                <div class="card-body">
+                    {% if stats.activities_by_type %}
+                        <h5 class="card-title">{{ stats.activities_by_type.0._id|default:"N/A" }}</h5>
+                        <p class="card-text">{{ stats.activities_by_type.0.count|default:0 }} times</p>
+                    {% else %}
+                        <p class="card-text">No data</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-white bg-info mb-3">
+                <div class="card-header">Most Active User Type</div>
+                <div class="card-body">
+                    {% if stats.activities_by_user_type %}
+                        <h5 class="card-title">{{ stats.activities_by_user_type.0._id|default:"N/A"|title }}</h5>
+                        <p class="card-text">{{ stats.activities_by_user_type.0.count|default:0 }} actions</p>
+                    {% else %}
+                        <p class="card-text">No data</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5>🔍 Filter Logs</h5>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-6">
+                    <label for="action_type" class="form-label">Action Type</label>
+                    <select class="form-select" id="action_type" name="action_type">
+                        <option value="">All Actions</option>
+                        {% for action in action_types %}
+                            <option value="{{ action }}" {% if action == selected_action_type %}selected{% endif %}>
+                                {{ action|title }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="limit" class="form-label">Limit</label>
+                    <select class="form-select" id="limit" name="limit">
+                        <option value="25" {% if limit == 25 %}selected{% endif %}>25</option>
+                        <option value="50" {% if limit == 50 %}selected{% endif %}>50</option>
+                        <option value="100" {% if limit == 100 %}selected{% endif %}>100</option>
+                        <option value="200" {% if limit == 200 %}selected{% endif %}>200</option>
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">Apply Filter</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Activity Logs Table -->
+    <div class="card">
+        <div class="card-header">
+            <h5>📝 Recent Activities ({{ activities|length }} records)</h5>
+        </div>
+        <div class="card-body">
+            {% if activities %}
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>Timestamp</th>
+                                <th>Action Type</th>
+                                <th>User</th>
+                                <th>User Type</th>
+                                <th>Details</th>
+                                <th>IP Address</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for activity in activities %}
+                            <tr>
+                                <td>
+                                    <small>{{ activity.timestamp|date:"Y-m-d H:i:s" }}</small>
+                                </td>
+                                <td>
+                                    {% if 'login' in activity.action_type %}
+                                        <span class="badge bg-info">{{ activity.action_type }}</span>
+                                    {% elif 'enroll' in activity.action_type %}
+                                        <span class="badge bg-success">{{ activity.action_type }}</span>
+                                    {% elif 'grade' in activity.action_type %}
+                                        <span class="badge bg-warning">{{ activity.action_type }}</span>
+                                    {% elif 'reject' in activity.action_type %}
+                                        <span class="badge bg-danger">{{ activity.action_type }}</span>
+                                    {% elif 'registration' in activity.action_type %}
+                                        <span class="badge bg-primary">{{ activity.action_type }}</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">{{ activity.action_type }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if activity.username %}
+                                        <strong>{{ activity.username }}</strong>
+                                        {% if activity.user_id %}
+                                            <br><small class="text-muted">ID: {{ activity.user_id }}</small>
+                                        {% endif %}
+                                    {% else %}
+                                        <em class="text-muted">Unknown</em>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if activity.user_type %}
+                                        <span class="badge bg-secondary">{{ activity.user_type|title }}</span>
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if activity.details %}
+                                        <button class="btn btn-sm btn-outline-info" type="button"
+                                                data-bs-toggle="collapse"
+                                                data-bs-target="#details-{{ forloop.counter }}"
+                                                aria-expanded="false">
+                                            View Details
+                                        </button>
+                                        <div class="collapse mt-2" id="details-{{ forloop.counter }}">
+                                            <div class="card card-body">
+                                                <pre style="margin:0; font-size: 0.85em;">{{ activity.details|pprint }}</pre>
+                                            </div>
+                                        </div>
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if activity.ip_address %}
+                                        <small>{{ activity.ip_address }}</small>
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i> No activity logs found.
+                    {% if not stats %}
+                        <br><br>
+                        <strong>Note:</strong> MongoDB might not be connected. Check your MongoDB configuration.
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Back Button -->
+    <div class="mt-4">
+        {% if user.is_superuser %}
+            <a href="/admin/" class="btn btn-secondary">← Back to Admin</a>
+        {% else %}
+            <a href="/teacher-dashboard/" class="btn btn-secondary">← Back to Dashboard</a>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+    .card {
+        box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075);
+    }
+    .table-responsive {
+        max-height: 600px;
+        overflow-y: auto;
+    }
+    pre {
+        white-space: pre-wrap;
+        word-wrap: break-word;
+    }
+</style>
+{% endblock %}
+

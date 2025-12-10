@@ -46,7 +46,9 @@ A comprehensive REST API built with Django and Django REST Framework for managin
   - **Capacity Tracking**: Real-time monitoring of course capacity
   - **Priority System**: Priority-based enrollment request handling
   - **Auto-enrollment**: Automatic processing from waitlist when spots open
-  - **Audit Trail**: Track who enrolled students and when
+  - **Audit Trail**: MongoDB-powered activity logging system
+  - **Activity Logs**: Track all user actions (logins, enrollments, grade changes)
+  - **Email Notifications**: Automated emails for enrollment actions
 
 - **Security**
   - JWT token authentication with configurable expiration
@@ -115,16 +117,18 @@ GPA = (4.0 × 3 + 3.0 × 4) / (3 + 4)
 - **Backend Framework:** Django 5.2+
 - **API Framework:** Django REST Framework 3.14+
 - **Authentication:** Simple JWT 5.3+
-- **Database:** SQLite (default) / PostgreSQL (configurable)
+- **Primary Database:** PostgreSQL (relational data)
+- **Activity Logs Database:** MongoDB (NoSQL for audit trails)
 - **ORM:** Django ORM
 - **Language:** Python 3.8+
-- **Additional Libraries:** psycopg2-binary, python-dotenv, requests
+- **Additional Libraries:** psycopg2-binary, python-dotenv, requests, pymongo
 
 ## 📋 Prerequisites
 
 - Python 3.8 or higher
 - pip (Python package manager)
-- PostgreSQL 12 or higher (optional - for production use; SQLite is included by default)
+- PostgreSQL 12 or higher (for primary database)
+- MongoDB 4.0 or higher (optional - for activity logs; app works without it)
 
 ## ⚙️ Installation
 

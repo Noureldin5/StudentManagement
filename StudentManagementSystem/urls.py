@@ -1,7 +1,8 @@
 
 from django.contrib import admin
 from django.urls import path, include
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from rest_framework_simplejwt.views import TokenRefreshView
+from students.jwt_views import CustomTokenObtainPairView, get_user_profile, register_student_jwt, register_teacher_jwt
 from templates.template_views import (
     home_view, login_view, logout_view,
     register_student_view, register_teacher_view,
@@ -13,14 +14,21 @@ from templates.template_views import (
     student_detail_view, teachers_list_view,
     direct_enroll_view, update_deadline_view, manage_course_view
 )
+from activity_views import (
+    get_activity_logs, get_activity_stats,
+    get_my_activity_logs, activity_logs_view
+)
 
 urlpatterns = [
     # Admin panel
     path('admin/', admin.site.urls),
 
-    # JWT Token endpoints
-    path('auth/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path('auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    # JWT Token endpoints (API)
+    path('api/auth/token/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('api/auth/profile/', get_user_profile, name='user_profile'),
+    path('api/auth/register/student/', register_student_jwt, name='api_register_student'),
+    path('api/auth/register/teacher/', register_teacher_jwt, name='api_register_teacher'),
 
     # Template-based views
     path('', home_view, name='home'),
@@ -43,6 +51,14 @@ urlpatterns = [
     path('manage-course/<int:course_id>/', manage_course_view, name='manage_course'),
     path('direct-enroll/<int:course_id>/', direct_enroll_view, name='direct_enroll'),
     path('update-deadline/<int:course_id>/', update_deadline_view, name='update_deadline'),
+
+    # Activity Logs (Template view)
+    path('activity-logs/', activity_logs_view, name='activity_logs'),
+
+    # Activity Logs API endpoints
+    path('api/activity-logs/', get_activity_logs, name='api_activity_logs'),
+    path('api/activity-logs/stats/', get_activity_stats, name='api_activity_stats'),
+    path('api/activity-logs/my-logs/', get_my_activity_logs, name='api_my_activity_logs'),
 
     # API URLs
     path('api/students/', include('students.urls')),

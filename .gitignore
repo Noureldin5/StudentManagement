@@ -38,9 +38,8 @@ env.bak/
 venv.bak/
 
 # IDEs
-.idea
-.vscode/
 .idea/
+.vscode/
 *.swp
 *.swo
 *~

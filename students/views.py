@@ -4,6 +4,10 @@ from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.response import Response
+from rest_framework import status
 from .models import Student, Enrollment, EnrollmentRequest
 from courses.models import Course
 import json
@@ -106,20 +110,31 @@ def delete_student(request, student_id):
         return JsonResponse({'error': str(e)}, status=400)
 
 
-@csrf_exempt
-@require_http_methods(["POST"])
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def request_enrollment(request):
+    """
+    Request enrollment in a course (requires JWT authentication)
+    """
     try:
-        data = json.loads(request.body)
+        data = request.data
 
         student = get_object_or_404(Student, id=data.get('student_id'))
+
+        # Verify the authenticated user owns this student profile
+        if request.user != student.user:
+            return Response({'error': 'You can only request enrollment for yourself'},
+                          status=status.HTTP_403_FORBIDDEN)
+
         course = get_object_or_404(Course, id=data.get('course_id'))
 
         if course.enrollment_deadline and timezone.now() > course.enrollment_deadline:
-            return JsonResponse({'error': 'Enrollment request deadline has passed'}, status=400)
+            return Response({'error': 'Enrollment request deadline has passed'},
+                          status=status.HTTP_400_BAD_REQUEST)
 
         if Enrollment.objects.filter(student=student, course=course).exists():
-            return JsonResponse({'error': 'Already enrolled in this course'}, status=400)
+            return Response({'error': 'Already enrolled in this course'},
+                          status=status.HTTP_400_BAD_REQUEST)
 
         enrollment_request, created = EnrollmentRequest.objects.get_or_create(
             student=student,
@@ -130,23 +145,25 @@ def request_enrollment(request):
 
         if not created:
             if enrollment_request.status == 'pending':
-                return JsonResponse({'error': 'Request already pending'}, status=400)
+                return Response({'error': 'Request already pending'},
+                              status=status.HTTP_400_BAD_REQUEST)
             elif enrollment_request.status == 'approved':
-                return JsonResponse({'error': 'Request already approved'}, status=400)
+                return Response({'error': 'Request already approved'},
+                              status=status.HTTP_400_BAD_REQUEST)
             else:
                 enrollment_request.status = 'pending'
                 enrollment_request.notes = data.get('notes', enrollment_request.notes)
                 enrollment_request.save()
 
-        return JsonResponse({
+        return Response({
             'message': 'Enrollment request submitted successfully',
             'request_id': enrollment_request.id,
             'status': enrollment_request.status,
             'deadline' : course.enrollment_deadline.isoformat() if course.enrollment_deadline else None
-        }, status=201)
+        }, status=status.HTTP_201_CREATED)
 
     except Exception as e:
-        return JsonResponse({'error': str(e)}, status=400)
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 @require_http_methods(["GET"])
